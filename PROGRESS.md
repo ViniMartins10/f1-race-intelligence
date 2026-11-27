@@ -30,4 +30,5 @@
 
 - Confirmed HTTP 401 from OpenF1 for the Silverstone 2025 roster and season catalog during a live-session restriction. The local API and alternate source remained healthy.
 - The gallery and driver profiles use published race results from Jolpica F1 when session drivers are unavailable. The source notice names the event and offers a retry of OpenF1.
-- The fallback uses the car number recorded for that race and does not produce OpenF1 session identifiers. Server and browser regression tests exercise the restricted-feed path.
+- The fallback uses the car number recorded for that race. Server and browser regression tests cover the restricted-feed path and a successful browser retry.
+- Verified all 20 Silverstone entries, every portrait file and Lando Norris's published race profile in the local production preview while OpenF1 returned HTTP 503.
