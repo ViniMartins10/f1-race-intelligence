@@ -1,5 +1,7 @@
 # F1 Race Intelligence
 
+[Open the live site](https://f1-race-intelligence-q8tq.onrender.com/)
+
 F1 Race Intelligence is an independent motorsport portfolio project that replays recorded Formula 1 sessions. Explore the driver grid, reconstruct circuit traces, and inspect timing and telemetry on a shared replay clock.
 
 ## What you can explore
@@ -103,7 +105,7 @@ The multi-stage Dockerfile builds the frontend and serves it from the same origi
 
 ## Screenshots and demo
 
-See [desktop preview](docs/screenshots/overview-desktop.png), [mobile preview](docs/screenshots/overview-mobile.png), [Single-seater studio](docs/screenshots/car-studio.png), [Race Control](docs/screenshots/race-control.png) and [Telemetry](docs/screenshots/telemetry.png). A public demo URL and video can be added after deployment.
+See [desktop preview](docs/screenshots/overview-desktop.png), [mobile preview](docs/screenshots/overview-mobile.png), [Single-seater studio](docs/screenshots/car-studio.png), [Race Control](docs/screenshots/race-control.png) and [Telemetry](docs/screenshots/telemetry.png).
 
 ## Credits
 

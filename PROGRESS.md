@@ -7,7 +7,7 @@
 | ASP.NET API, OpenF1 integration and archive | Implemented with shared cache, request quota, SignalR windows and optional MySQL. |
 | Race Control, track, telemetry and historical clock | Implemented. Verified with the 2025 British Grand Prix replay. |
 | Calendar, comparisons and radio | Implemented with upstream coverage and empty states. |
-| Automated verification and hosting | CI, Docker Compose and free Render Blueprint prepared. The public deployment requires a signed-in Render workspace. |
+| Automated verification and hosting | CI and Docker Compose verified. The site is [live on Render](https://f1-race-intelligence-q8tq.onrender.com/) on the free plan, with on-demand deploys. |
 
 ## Validation log
 
