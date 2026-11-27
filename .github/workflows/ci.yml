@@ -1,0 +1,44 @@
+name: Continuous integration
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: npm ci
+      - run: npm run build
+      - run: dotnet test server/Tests/F1RaceIntelligence.Tests.csproj --configuration Release
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Verify container and MySQL migration
+        run: |
+          docker compose up --build -d --wait
+          curl --fail --retry 12 --retry-connrefused http://127.0.0.1:8080/health
+          curl --fail http://127.0.0.1:8080/ | grep -q 'F1 Race Intelligence'
+          for attempt in $(seq 1 15); do
+            if docker compose exec -T database sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "SELECT 1 FROM Responses LIMIT 1"'; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs app
+          exit 1
+      - if: always()
+        run: docker compose down --volumes
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore

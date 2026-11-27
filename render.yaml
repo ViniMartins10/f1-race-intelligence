@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: f1-race-intelligence
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass

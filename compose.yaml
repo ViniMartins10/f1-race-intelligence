@@ -1,0 +1,27 @@
+services:
+  database:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-f1race}
+      MYSQL_USER: ${MYSQL_USER:-f1race}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-f1race-dev}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-f1race-root-dev}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - race-archive:/var/lib/mysql
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      ConnectionStrings__Archive: Server=database;Port=3306;Database=${MYSQL_DATABASE:-f1race};User=${MYSQL_USER:-f1race};Password=${MYSQL_PASSWORD:-f1race-dev}
+      OpenF1__AccessToken: ${OpenF1__AccessToken:-}
+    depends_on:
+      database:
+        condition: service_healthy
+volumes:
+  race-archive:

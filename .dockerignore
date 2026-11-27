@@ -1,0 +1,11 @@
+.git
+.github
+node_modules
+dist
+**/bin
+**/obj
+.env*
+.cache
+test-results
+playwright-report
+docs/screenshots
