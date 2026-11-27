@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import gsap from 'gsap'
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Gauge, Layers3, Timer, Trophy } from 'lucide-react'
+import { useReducedMotion } from 'motion/react'
 import { fastest, getPortrait, lapTime, loadPortraits, teamColor, type Driver, type SeasonDriver, type Session, type Timing } from './data'
 import { useFeed } from './hooks'
 import { Empty, Label, Loading, Portrait } from './UI'
@@ -49,6 +51,8 @@ export function Drivers({ drivers, year, controls, loading, error, retry }: { dr
   </>
 }
 export function DriverProfile({ driver, session, loading }: { driver?: Driver; session?: Session; loading: boolean }) {
+  const profile = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
   const query = driver && session ? { session: session.session_key, driver: driver.driver_number } : undefined
   const laps = useFeed<Timing>('laps', query)
   const results = useFeed<Timing>('session_result', query)
@@ -56,13 +60,23 @@ export function DriverProfile({ driver, session, loading }: { driver?: Driver; s
   const season = useFeed<SeasonDriver>('season_drivers', session ? { year: session.year } : undefined)
   const [ready, setReady] = useState(false)
   useEffect(() => { let active = true; void loadPortraits().then(() => { if (active) setReady(true) }); return () => { active = false } }, [])
+  useEffect(() => {
+    if (reduced || !driver || !profile.current) return
+    const context = gsap.context(() => {
+      gsap.timeline({ defaults: { ease: 'power3.out', clearProps: 'opacity,transform,clipPath' } })
+        .from('.profile-hero .portrait', { clipPath: 'inset(0 0 0 100%)', duration: .75 })
+        .from('.profile-copy > *', { y: 18, opacity: 0, duration: .48, stagger: .07 }, .11)
+        .from('.profile-metrics > div', { y: 9, opacity: .35, duration: .42, stagger: .055 }, .31)
+    }, profile)
+    return () => context.revert()
+  }, [driver, reduced])
   if (!driver) return loading ? <Loading/> : <Empty>Driver unavailable in this session. <a href="#/drivers">Choose a driver</a></Empty>
   const portrait = ready ? getPortrait(driver) : undefined
   const best = fastest(laps.rows ?? [])
   const nationality = season.rows?.find(item => item.code === driver.name_acronym)?.nationality
   const speed = Math.max(0, ...(laps.rows ?? []).flatMap(lap => [lap.st_speed ?? 0, lap.i1_speed ?? 0, lap.i2_speed ?? 0]))
   const telemetryUrl = '#/telemetry/' + driver.driver_number
-  return <div className="profile" style={{ '--team': teamColor(driver) } as CSSProperties}>
+  return <div className="profile" ref={profile} style={{ '--team': teamColor(driver) } as CSSProperties}>
     <a className="text-link" href="#/drivers"><ArrowLeft size={17}/> All drivers</a>
     <div className="profile-hero"><div className="profile-copy"><Label>{driver.team_name}{nationality ? ' · ' + nationality : ''}</Label><h1>{driver.first_name}<br/><em>{driver.last_name}</em></h1><p>{session?.circuit_short_name} · {session?.session_name} · {session?.year}</p><a className="button" href={telemetryUrl}><Gauge size={17}/> Explore telemetry</a></div><Portrait driver={driver} eager/></div>
     <div className="metric-grid profile-metrics">

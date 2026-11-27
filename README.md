@@ -4,7 +4,8 @@ F1 Race Intelligence is an independent motorsport portfolio project that replays
 
 ## What you can explore
 
-- An editorial overview with original single-seater artwork, a procedural Three.js car, a race countdown when future schedule data is available, and an interactive driver carousel.
+- An editorial overview with GSAP scroll transitions, original single-seater artwork, a race countdown and an interactive driver carousel.
+- A Three.js studio with an original procedural car, three camera angles, orbit, zoom and optional auto-rotation.
 - Driver profiles with team colors, licensed portraits where available, and session statistics.
 - Race Control with classification, gaps, lap and sector times, tyres, pit stops, conditions and race direction messages.
 - Approximate circuit reconstruction from recorded locations in 2D and 3D, including interpolated markers, zoom and driver follow.
@@ -101,7 +102,7 @@ The multi-stage Dockerfile builds the frontend and serves it from the same origi
 
 ## Screenshots and demo
 
-See [desktop preview](docs/screenshots/overview-desktop.png), [mobile preview](docs/screenshots/overview-mobile.png), [Race Control](docs/screenshots/race-control.png) and [Telemetry](docs/screenshots/telemetry.png). A public demo URL and video can be added after deployment.
+See [desktop preview](docs/screenshots/overview-desktop.png), [mobile preview](docs/screenshots/overview-mobile.png), [Single-seater studio](docs/screenshots/car-studio.png), [Race Control](docs/screenshots/race-control.png) and [Telemetry](docs/screenshots/telemetry.png). A public demo URL and video can be added after deployment.
 
 ## Credits
 

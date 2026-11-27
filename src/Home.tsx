@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useReducedMotion } from 'motion/react'
@@ -7,9 +7,21 @@ import { date, dateLabel, elapsed, utcTime, type Driver, type Meeting, type Sess
 import { DriverCard, featureOrder } from './Drivers'
 import { Empty, hasWebGl, Label, Loading } from './UI'
 
-const CarScene = lazy(() => import('./CarScene'))
+const loadCarScene = () => import('./CarScene')
+const CarScene = lazy(loadCarScene)
+const warmCarScene = () => { void loadCarScene().catch(() => undefined) }
+function ModelFallback() {
+  return <div className="studio-fallback"><p>Interactive 3D is unavailable on this device.</p></div>
+}
+class ModelBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() { return this.state.failed ? <ModelFallback/> : this.props.children }
+}
+
 type Props = { session?: Session; next?: Meeting; nextSession?: Session; drivers: Driver[]; loading: boolean; error?: string; retry: () => void }
 export function Home({ session, next, nextSession, drivers, loading, error, retry }: Props) {
+  const overview = useRef<HTMLDivElement>(null)
   const hero = useRef<HTMLElement>(null)
   const modelDialog = useRef<HTMLDialogElement>(null)
   const strip = useRef<HTMLDivElement>(null)
@@ -22,21 +34,62 @@ export function Home({ session, next, nextSession, drivers, loading, error, retr
   const days = Math.floor(remaining / 86400)
   useEffect(() => { const id = window.setInterval(() => setClock(Date.now()), 1000); return () => window.clearInterval(id) }, [])
   useEffect(() => {
-    if (reduced || !hero.current) return
+    if (reduced || !overview.current || !hero.current) return
     gsap.registerPlugin(ScrollTrigger)
+    const media = gsap.matchMedia(overview)
     const context = gsap.context(() => {
-      gsap.from('.hero-in', { y: 27, opacity: 0, duration: .62, stagger: .07, ease: 'power3.out', clearProps: 'opacity,transform' })
-      gsap.to('.hero-image', { yPercent: 8, scale: 1.05, ease: 'none', scrollTrigger: { trigger: hero.current, start: 'top top', end: 'bottom top', scrub: .6 } })
-    }, hero)
-    return () => context.revert()
+      gsap.timeline({ defaults: { ease: 'power3.out', clearProps: 'opacity,transform' } })
+        .from('.hero-kicker', { x: -16, opacity: 0, duration: .46 })
+        .from('.hero-line-content', { yPercent: 110, duration: .75, stagger: .09 }, .05)
+        .from('.hero-in', { y: 16, opacity: 0, duration: .46, stagger: .09 }, .32)
+        .from('.hero-corner, .hero-bottom', { opacity: 0, duration: .5, stagger: .08 }, .46)
+
+      media.add('(min-width: 720px)', () => {
+        gsap.to('.hero-image', { yPercent: 12, scale: 1.08, ease: 'none',
+          scrollTrigger: { trigger: hero.current, start: 'top top', end: 'bottom top', scrub: .65 } })
+        gsap.to('.hero-copy', { y: -46, ease: 'none',
+          scrollTrigger: { trigger: hero.current, start: 'top top', end: 'bottom top', scrub: .5 } })
+        const beam = overview.current?.querySelector('.hero-ignition')
+        if (beam) gsap.fromTo(beam, { xPercent: -120, opacity: .55 }, { xPercent: 135, opacity: 0,
+          duration: 1.45, ease: 'power2.out', delay: .16 })
+      })
+      const reveal = (trigger: string, items: string) => {
+        gsap.from(items, {
+          y: 18, opacity: .22, duration: .58, stagger: .065, ease: 'power3.out',
+          clearProps: 'opacity,transform', scrollTrigger: { trigger, start: 'top 96%', once: true },
+        })
+      }
+      reveal('.trackline', '.trackline-inner > *')
+      reveal('.grid-section', '.grid-section .section-title > *')
+      reveal('.explore-section', '.explore-card')
+    }, overview)
+    return () => { media.revert(); context.revert() }
   }, [reduced])
+
+  useEffect(() => {
+    const carousel = strip.current
+    if (reduced || !carousel || !drivers.length) return
+    const context = gsap.context(() => {
+      const firstCards = [...carousel.querySelectorAll('.driver-card')].slice(0, 6)
+      gsap.from(firstCards, { y: 21, opacity: .24, duration: .62, stagger: .055, ease: 'power3.out',
+        clearProps: 'opacity,transform', scrollTrigger: { trigger: carousel, start: 'top 94%', once: true } })
+    }, carousel)
+    return () => context.revert()
+  }, [drivers, reduced])
+
   function moveStrip(direction: number) {
     const element = strip.current
     element?.scrollBy({ left: direction * Math.max(240, element.clientWidth * .72), behavior: reduced ? 'instant' : 'smooth' })
   }
-  function openModel() { setModel(hasWebGl()); modelDialog.current?.showModal() }
+  function openModel() {
+    const dialog = modelDialog.current
+    if (!dialog || dialog.open) return
+    setModel(hasWebGl())
+    dialog.showModal()
+    if (!reduced) gsap.fromTo(dialog, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .32, ease: 'power2.out', clearProps: 'opacity,transform' })
+  }
 
-  return <>
+  return <div ref={overview}>
     <section className="hero" ref={hero} onPointerMove={event => {
       if (reduced || event.pointerType !== 'mouse') return
       const rect = event.currentTarget.getBoundingClientRect()
@@ -45,10 +98,12 @@ export function Home({ session, next, nextSession, drivers, loading, error, retr
     }} onPointerLeave={event => { event.currentTarget.style.setProperty('--pointer-x', '0px'); event.currentTarget.style.setProperty('--pointer-y', '0px') }}>
       <div className="hero-image" aria-hidden="true"><img src="/hero-car.webp" alt="" fetchPriority="high"/></div>
       <div className="hero-scrim"/>
+      <div className="hero-ignition" aria-hidden/>
       <div className="shell hero-inner">
         <div className="hero-copy">
-          <div className="hero-in"><Label>FORMULA 1 · DATA EXPERIENCE</Label></div>
-          <h1 className="hero-in">BEYOND THE<br/><em>FINISH LINE<span>.</span></em></h1>
+          <div className="hero-kicker"><Label>FORMULA 1 · DATA EXPERIENCE</Label></div>
+          <h1><span className="hero-line"><span className="hero-line-content">BEYOND THE</span></span>{' '}
+            <span className="hero-line"><em className="hero-line-content">FINISH LINE<span>.</span></em></span></h1>
           <p className="hero-in">Every driver. Every lap. Every millisecond.</p>
           <div className="hero-actions hero-in">
             <a className="button" href="#/race-control"><Play size={16} fill="currentColor"/> Launch race replay</a>
@@ -56,7 +111,7 @@ export function Home({ session, next, nextSession, drivers, loading, error, retr
           </div>
         </div>
         <div className="hero-corner">
-          <button className="model-toggle" onClick={openModel}><Box size={15}/> VIEW 3D CAR</button>
+          <button className="model-toggle" onPointerEnter={warmCarScene} onFocus={warmCarScene} onClick={openModel}><Box size={15}/> VIEW 3D CAR</button>
           <span className="hero-guides" aria-hidden><i/><i/><i/><i/></span>
         </div>
         <div className="hero-bottom"><span><i/> OPENF1 DATA FEED</span><span className="edition">RACE INTELLIGENCE <b> / </b> GRID VIEW</span></div>
@@ -90,11 +145,11 @@ export function Home({ session, next, nextSession, drivers, loading, error, retr
       <a className="explore-card" href="#/telemetry"><Gauge size={25}/><span><small>DRIVER DATA</small><strong>Telemetry</strong><p>Inspect speed, throttle, braking and gears across the session.</p></span><ArrowRight size={24}/></a>
     </section>
 
-    <dialog ref={modelDialog} className="model-dialog" onClose={() => setModel(false)}>
-      <div className="model-header"><Label>3D CAR CONCEPT</Label><button className="icon-button" aria-label="Close 3D car" onClick={() => modelDialog.current?.close()}><X size={21}/></button></div>
-      <div className="model-view" style={{ '--fallback': 'url(/hero-car.webp)' } as CSSProperties}>
-        {model ? <Suspense fallback={<Loading>Loading 3D model</Loading>}><CarScene/></Suspense> : <p>WebGL is unavailable on this device.</p>}
+    <dialog ref={modelDialog} className="model-dialog" aria-labelledby="studio-title" data-lenis-prevent onClose={() => setModel(false)}>
+      <div className="model-header"><h2 id="studio-title">Single-seater <em>studio</em></h2><button className="icon-button" aria-label="Close 3D car" onClick={() => modelDialog.current?.close()}><X size={21}/></button></div>
+      <div className="model-view">
+        {model ? <ModelBoundary><Suspense fallback={<Loading>Loading 3D model</Loading>}><CarScene/></Suspense></ModelBoundary> : <ModelFallback/>}
       </div>
     </dialog>
-  </>
+  </div>
 }

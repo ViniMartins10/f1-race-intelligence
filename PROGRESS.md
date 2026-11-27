@@ -16,5 +16,12 @@
 - The real Silverstone archive returned 20 drivers and 222 telemetry samples for Lando Norris in a one-minute test window.
 - The .NET Release suite passed all six unit and integration cases. The Playwright suite against OpenF1 passed all three browser cases covering portraits, driver navigation, replay and telemetry, and mobile navigation.
 - Captured and reviewed desktop, mobile, Race Control and telemetry screenshots in docs/screenshots.
-- Eleven verified licensed portraits are bundled. Other drivers use a team-colored number treatment.
+- Thirty-two verified licensed portraits are bundled. The 20 drivers in the default British Grand Prix replay all have photos. The number treatment covers other historical entries.
 - The project can run without MySQL. Docker and MySQL are covered by the CI configuration and require a Docker environment for the container smoke check.
+
+## Visual refinement
+
+- Added GSAP headline, parallax and scroll sequences to the overview, with a separate reveal for driver profiles. Motion respects system preferences.
+- Replaced the concept car with original lofted bodywork, sculpted wings, profiled tyres, suspension and a lit Three.js studio.
+- The studio offers three camera angles, manual orbit, zoom and optional auto-rotation, with a static fallback for devices without WebGL.
+- Playwright covers the studio controls, mobile sizing, reduced motion and the WebGL fallback.

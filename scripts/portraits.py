@@ -22,11 +22,16 @@ NAMES = [
     'Robert Shwartzman', 'Nyck de Vries', 'Felipe Drugovich', 'Paul Aron',
 ]
 ALIASES = {'carlos sainz jr.': ['carlos sainz'], 'kimi antonelli': ['andrea kimi antonelli'],
-           'alex albon': ['alexander albon'], 'zhou guanyu': ['guanyu zhou']}
+           'alex albon': ['alexander albon'], 'alexander albon': ['alex albon'], 'zhou guanyu': ['guanyu zhou']}
 COMMONS = {
     'Lewis Hamilton': 'Lewis Hamilton 2022 São Paulo Grand Prix (52498120773) (cropped).jpg',
     'George Russell': '2024-08-25 Motorsport, Formel 1, Großer Preis der Niederlande 2024 STP 3908 by Stepro.jpg',
     'Fernando Alonso': '2024-08-25 Motorsport, Formel 1, Großer Preis der Niederlande 2024 STP 3801 by Stepro.jpg',
+    'Liam Lawson': 'Liam Lawson Honda US 2025.jpg',
+    'Isack Hadjar': 'Isack Hadjar 2025.png',
+    'Yuki Tsunoda': 'Yuki Tsunoda 2025.png',
+    'Alexander Albon': 'Alex Albon at the Melbourne Walk during the 2026 Australian Grand Prix (028A8626) (cropped).jpg',
+    'Valtteri Bottas': 'Valtteri Bottas at the 2026 Adelaide Motorsport Festival (028A7556).jpg',
 }
 
 def read(url):
