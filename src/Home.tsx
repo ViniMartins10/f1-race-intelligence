@@ -3,8 +3,8 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useReducedMotion } from 'motion/react'
 import { ArrowRight, Box, CalendarDays, ChevronLeft, ChevronRight, Flag, Gauge, Play, Radio, Timer, X } from 'lucide-react'
-import { date, dateLabel, elapsed, utcTime, type Driver, type Meeting, type Session } from './data'
-import { DriverCard, featureOrder } from './Drivers'
+import { date, dateLabel, elapsed, utcTime, type Meeting, type Session } from './data'
+import { DriverCard, featureOrder, PublishedResultsNotice, type DriverGridProps } from './Drivers'
 import { Empty, hasWebGl, Label, Loading } from './UI'
 
 const loadCarScene = () => import('./CarScene')
@@ -19,8 +19,8 @@ class ModelBoundary extends Component<{ children: ReactNode }, { failed: boolean
   render() { return this.state.failed ? <ModelFallback/> : this.props.children }
 }
 
-type Props = { session?: Session; next?: Meeting; nextSession?: Session; drivers: Driver[]; loading: boolean; error?: string; retry: () => void }
-export function Home({ session, next, nextSession, drivers, loading, error, retry }: Props) {
+type Props = DriverGridProps & { session?: Session; next?: Meeting; nextSession?: Session }
+export function Home({ session, next, nextSession, drivers, loading, error, retry, publishedGrid, retryOpenF1 }: Props) {
   const overview = useRef<HTMLDivElement>(null)
   const hero = useRef<HTMLElement>(null)
   const modelDialog = useRef<HTMLDialogElement>(null)
@@ -114,7 +114,7 @@ export function Home({ session, next, nextSession, drivers, loading, error, retr
           <button className="model-toggle" onPointerEnter={warmCarScene} onFocus={warmCarScene} onClick={openModel}><Box size={15}/> VIEW 3D CAR</button>
           <span className="hero-guides" aria-hidden><i/><i/><i/><i/></span>
         </div>
-        <div className="hero-bottom"><span><i/> OPENF1 DATA FEED</span><span className="edition">RACE INTELLIGENCE <b> / </b> GRID VIEW</span></div>
+        <div className="hero-bottom"><span><i/> {publishedGrid ? 'JOLPICA F1 RESULTS' : 'OPENF1 DATA FEED'}</span><span className="edition">RACE INTELLIGENCE <b> / </b> GRID VIEW</span></div>
       </div>
     </section>
 
@@ -123,7 +123,7 @@ export function Home({ session, next, nextSession, drivers, loading, error, retr
         <div className="trackline-cell trackline-intro"><span className="icon-frame"><Flag size={21}/></span><div><small>NEXT GRAND PRIX</small><strong>{next?.meeting_name ?? 'Schedule pending'}</strong></div></div>
         <div className="trackline-cell"><CalendarDays size={17}/><div><small>{nextSession?.session_name?.toUpperCase() ?? 'SCHEDULE'}</small><strong>{nextTime ? dateLabel(nextTime) : 'Awaiting data'}</strong>{nextSession && <span className="schedule-time">{utcTime(nextSession.date_start).slice(0, 5)} UTC</span>}</div></div>
         <div className="trackline-cell"><Timer size={17}/><div><small>{nextTime && date(nextTime) > clock ? 'COUNTDOWN' : 'SESSION TIME'}</small><strong>{nextTime && date(nextTime) > clock ? (days ? days + 'D ' : '') + elapsed(remaining % 86400) : nextTime ? utcTime(nextTime) + ' UTC' : '—'}</strong></div></div>
-        <div className="trackline-cell trackline-status"><Radio size={17}/><div><small>DATA MODE</small><strong><i/> Historical replay</strong></div></div>
+        <div className="trackline-cell trackline-status"><Radio size={17}/><div><small>DATA MODE</small><strong><i/> {publishedGrid ? 'Published results' : 'Historical replay'}</strong></div></div>
         <a className="trackline-link" href="#/calendar">Calendar <ArrowRight size={16}/></a>
       </div>
     </section>
@@ -135,6 +135,7 @@ export function Home({ session, next, nextSession, drivers, loading, error, retr
           <div className="carousel-nav"><button className="icon-button" aria-label="Previous drivers" onClick={() => moveStrip(-1)} disabled={!drivers.length}><ChevronLeft size={20}/></button><button className="icon-button" aria-label="Next drivers" onClick={() => moveStrip(1)} disabled={!drivers.length}><ChevronRight size={20}/></button></div>
         </div>
       </div>
+      {publishedGrid && <PublishedResultsNotice grid={publishedGrid} retry={retryOpenF1}/>}
       {loading ? <Loading>Acquiring the grid</Loading> : error ? <Empty error action={<button className="button button-light" onClick={retry}>Retry</button>}>{error}</Empty> :
         drivers.length ? <div className="driver-strip" ref={strip} tabIndex={0} aria-label="Driver carousel">{displayDrivers.map((driver, index) => <DriverCard key={driver.driver_number} driver={driver} eager={index < 4}/>)}</div>
           : <Empty>Driver details will appear when the feed is available.</Empty>}

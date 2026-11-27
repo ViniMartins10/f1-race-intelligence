@@ -14,6 +14,20 @@ export type Driver = {
   name_acronym: string; team_name: string; team_colour?: string
 }
 export type SeasonDriver = { id: string; code: string; firstName: string; lastName: string; number?: string; nationality?: string }
+export type PublishedDriver = {
+  number: number; code: string; firstName: string; lastName: string; team: string
+  nationality: string | null; position: number | null; status: string | null
+  fastestLap: string | null; laps: number | null; points: number | null
+}
+export type PublishedRaceGrid = { raceName: string; date: string; drivers: PublishedDriver[] }
+
+export function driverFromResult(result: PublishedDriver): Driver {
+  return {
+    driver_number: result.number, full_name: result.firstName + ' ' + result.lastName,
+    first_name: result.firstName, last_name: result.lastName, name_acronym: result.code, team_name: result.team,
+  }
+}
+
 export type Timing = {
   date?: string; date_start?: string; driver_number?: number; position?: number; lap_number?: number
   gap_to_leader?: number | string | null; interval?: number | string | null; lap_duration?: number | null

@@ -71,6 +71,7 @@ For an existing MySQL 8 server, create a database and grant the application acco
 | `GET /health` | Application liveness |
 | `GET /api/status` | Data provider and whether a live credential is configured |
 | `GET /api/feed/season_drivers?year=2025` | Supplemental season entries and nationalities from Jolpica F1 |
+| `GET /api/feed/race_grid?year=2025&date=2025-07-06` | Published race entries and results from Jolpica F1. Omit the date for the latest published race in the season. |
 | `GET /api/feed/{stream}?year=2025` | Season meetings and sessions, which also accept `meeting` and `session` |
 | `GET /api/feed/{stream}?session=…&driver=…` | Session roster, timing, laps, pit, stints, weather, race control, results, grid, overtakes, radio and championship feeds |
 | `GET /api/feed/{stream}?session=…&driver=…&start=…&end=…` | `location` and `car_data` using UTC ISO-8601 bounds. Car data requires a driver |
@@ -96,7 +97,7 @@ The multi-stage Dockerfile builds the frontend and serves it from the same origi
 ## Data coverage
 
 - OpenF1 provides historical data from 2023 onward. Anonymous requests can temporarily become unavailable during live sessions. Historical playback requires no paid plan. Authenticated live ingestion and a live viewer are future extensions. The backend has a server-side bearer configuration seam.
-- Portraits and timing profiles follow the selected session. The Drivers view also offers the season entries from Jolpica. Some drivers lack a verified licensed photograph. Radio, results, tyre compounds and telemetry can be missing or incomplete. The site displays unavailable fields explicitly.
+- Portraits and timing profiles follow the selected session. If OpenF1 cannot provide the lineup, the gallery and profiles use the published race entries, teams and results from Jolpica F1. The interface names the race and data source and offers a retry. Replay telemetry comes from OpenF1. Some drivers lack a verified licensed photograph, and radio, results, tyre compounds and telemetry can be incomplete.
 - Circuit geometry is a reconstruction from one recorded lap. Markers represent the location feed, sectors require source data and distance is estimated from recorded speed. The project does not claim geographic precision.
 - Constructor and championship pages, sector overlays, and automated live streaming are outside the current interface.
 
@@ -106,7 +107,7 @@ See [desktop preview](docs/screenshots/overview-desktop.png), [mobile preview](d
 
 ## Credits
 
-Timing and radio metadata come from [OpenF1](https://openf1.org/docs/). Season entries and nationalities are from [Jolpica F1](https://github.com/jolpica/jolpica-f1). Individual image licenses and authors are recorded in [the portrait credits](public/portraits/credits.json) and shown in the site's Data & Credits view. Some portraits show earlier seasons. The car model is original procedural artwork. The opening image was generated for this project with ImageGen. The visual reference was [Lando Norris's website](https://landonorris.com/).
+Timing and radio metadata come from [OpenF1](https://openf1.org/docs/). Season entries, nationalities and backup race results are from [Jolpica F1](https://github.com/jolpica/jolpica-f1). Individual image licenses and authors are recorded in [the portrait credits](public/portraits/credits.json) and shown in the site's Data & Credits view. Some portraits show earlier seasons. The car model is original procedural artwork. The opening image was generated for this project with ImageGen. The visual reference was [Lando Norris's website](https://landonorris.com/).
 
 F1 Race Intelligence is an educational, independent project with no official association with Formula 1, FIA, any driver or any team.
 

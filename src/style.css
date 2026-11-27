@@ -167,6 +167,12 @@ h1 em,h2 em{font-weight:800;font-style:italic;color:var(--accent)}
 .empty-state{min-height:112px;display:flex;align-items:center;justify-content:center;text-align:center;gap:10px;flex-wrap:wrap;padding:18px;color:var(--dim);font-size:.85rem;background:#111510;border:1px dashed #313a2d}
 .empty-state svg{color:var(--accent);flex:none}
 .empty-state[role=alert]{color:#f0cfa6}
+.grid-source{display:flex;align-items:center;gap:12px;padding:12px 14px;margin:0 0 14px;border:1px solid #3c472f;background:#151a11}
+.grid-source>svg{flex:none;color:var(--accent)}
+.grid-source p{flex:1;display:grid;gap:3px;color:var(--dim);font-size:.83rem;line-height:1.4}
+.grid-source strong{color:var(--ink)}
+.profile .grid-source{margin:14px 0 0}
+@media(max-width:540px){.grid-source{flex-wrap:wrap}.grid-source p{flex-basis:calc(100% - 35px)}.grid-source button{margin-left:29px}}
 .spin{animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .muted{color:var(--muted)}

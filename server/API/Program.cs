@@ -69,6 +69,8 @@ app.MapHealthChecks("/health");
 app.MapGet("/api/status", (IRaceFeed feed) => new { source = "OpenF1", liveConfigured = feed.LiveConfigured });
 app.MapGet("/api/feed/season_drivers", async (int year, SeasonRoster roster, CancellationToken cancellation) =>
     Results.Json(await roster.GetAsync(year, cancellation))).RequireRateLimiting("feed");
+app.MapGet("/api/feed/race_grid", async (int year, DateOnly? date, SeasonRoster roster, CancellationToken cancellation) =>
+    Results.Json(await roster.GetRaceGridAsync(year, date, cancellation))).RequireRateLimiting("feed");
 app.MapGet("/api/feed/{stream}", async (string stream, int? year, int? meeting, int? session, int? driver,
         DateTimeOffset? start, DateTimeOffset? end, IRaceFeed feed, CancellationToken cancellation) =>
     Results.Json(await feed.ReadAsync(stream, new(year, meeting, session, driver, start, end), cancellation)))

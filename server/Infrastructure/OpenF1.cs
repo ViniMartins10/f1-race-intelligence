@@ -123,7 +123,7 @@ public sealed class OpenF1(IHttpClientFactory clients, IMemoryCache cache, IServ
                 }
 
                 if (response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized)
-                    throw new FeedException("OpenF1 temporarily restricts this feed. Try another session or retry later.", 503);
+                    throw new FeedException("OpenF1 access is temporarily restricted. Please try again later.", 503);
                 if (attempt >= 2 || ((int)response.StatusCode < 500 && response.StatusCode != HttpStatusCode.TooManyRequests))
                     throw new FeedException("This timing feed is temporarily unavailable.", 502);
                 retryAfter = response.Headers.RetryAfter?.Delta;

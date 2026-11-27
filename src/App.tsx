@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import Lenis from 'lenis'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { AudioLines, CalendarDays, Flag, Gauge, Menu, Radio, X } from 'lucide-react'
-import { date, type Driver, type Meeting, type Session } from './data'
+import { date, driverFromResult, type Driver, type Meeting, type PublishedRaceGrid, type Session } from './data'
 import { useFeed } from './hooks'
 import { Home } from './Home'
 import { Empty, Loading, Mark, Select } from './UI'
@@ -13,16 +13,20 @@ const Cockpit = lazy(() => import('./Cockpit'))
 const navigation = [
   ['Overview', ''], ['Drivers', 'drivers'], ['Race Control', 'race-control'], ['Telemetry', 'telemetry'], ['Calendar', 'calendar'],
 ] as const
-const initialYear = 2025
+const featuredRace = { year: 2025, circuit: 'Silverstone', date: '2025-07-06' }
 const nowYear = new Date().getUTCFullYear()
 const years = Array.from({ length: Math.max(1, nowYear - 2022) }, (_, index) => nowYear - index)
 const readRoute = () => location.hash.slice(1).replace(/^\/+/, '').split('/')
 const href = (route: string) => '#/' + route
+function utcDate(value?: string) {
+  const timestamp = date(value)
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString().slice(0, 10) : undefined
+}
 
 export default function App() {
   const [route, setRoute] = useState(readRoute)
   const [menu, setMenu] = useState(false)
-  const [selection, setSelection] = useState({ year: initialYear, meeting: 0, session: 0 })
+  const [selection, setSelection] = useState<{ year: number; meeting: number; session: number; raceDate?: string }>({ year: featuredRace.year, meeting: 0, session: 0 })
   const reduced = useReducedMotion()
   const page = route[0] || ''
   const cockpit = page === 'race-control' || page === 'telemetry' || page === 'compare' || page === 'radio'
@@ -47,20 +51,43 @@ export default function App() {
     return [...new Map(races.map(race => [race.meeting_key, race])).values()].sort((a, b) => date(b.date_start) - date(a.date_start))
   }, [sessions])
   const meeting = meetingChoices.find(race => race.meeting_key === selection.meeting)
-    ?? meetingChoices.find(race => race.year === initialYear && race.circuit_short_name === 'Silverstone') ?? meetingChoices[0]
+    ?? meetingChoices.find(race => race.year === featuredRace.year && race.circuit_short_name === featuredRace.circuit) ?? meetingChoices[0]
   const candidates = sessions.filter(s => s.meeting_key === meeting?.meeting_key).sort((a, b) => date(a.date_start) - date(b.date_start))
-  const session = candidates.find(s => s.session_key === selection.session) ?? candidates.find(s => s.session_name === 'Race') ?? candidates.at(-1)
+  const race = candidates.find(s => s.session_name === 'Race')
+  const session = candidates.find(s => s.session_key === selection.session) ?? race ?? candidates.at(-1)
   const roster = useFeed<Driver>('drivers', session ? { session: session.session_key } : undefined)
   const drivers = useMemo(() => [...new Map((roster.rows ?? []).map(driver => [driver.driver_number, driver])).values()], [roster.rows])
+  const primaryGridLoading = sessionsData.loading || roster.loading
+  const catalogError = sessionsData.error
+  const primaryGridError = catalogError ?? roster.error
+  const raceDate = utcDate(race?.date_start) ?? selection.raceDate ??
+    (selection.year === featuredRace.year && !selection.meeting ? featuredRace.date : undefined)
+  const publishedRoster = useFeed<PublishedRaceGrid>('race_grid',
+    (page === '' || page === 'drivers') && !primaryGridLoading && drivers.length === 0
+      ? { year: selection.year, ...(raceDate ? { date: raceDate } : {}) } : undefined)
+  const publishedGrid = publishedRoster.rows?.[0]
+  const displayDrivers = useMemo(() => publishedGrid ? publishedGrid.drivers.map(driverFromResult) : drivers, [drivers, publishedGrid])
+  const retryOpenF1 = catalogError || !session ? sessionsData.retry : roster.retry
+  const grid = {
+    drivers: displayDrivers,
+    loading: primaryGridLoading || publishedRoster.loading,
+    error: publishedGrid ? undefined : publishedRoster.error ?? primaryGridError,
+    retry: publishedRoster.error ? publishedRoster.retry : retryOpenF1,
+    publishedGrid, retryOpenF1,
+  }
   const next = [...(currentMeetings.rows ?? []), ...(followingMeetings.rows ?? [])].filter(event => date(event.date_end || event.date_start) >= Date.now())
     .sort((a, b) => date(a.date_start) - date(b.date_start))[0]
   const nextSessions = useFeed<Session>('sessions', page === '' && next ? { meeting: next.meeting_key } : undefined)
   const nextSession = nextSessions.rows?.filter(item => date(item.date_start) > Date.now()).sort((a, b) => date(a.date_start) - date(b.date_start))[0]
-  const catalogError = sessionsData.error
-  const selectedDriver = drivers.find(driver => driver.driver_number === Number(route[1]))
+  const driverNumber = Number(route[1])
+  const selectedDriver = displayDrivers.find(driver => driver.driver_number === driverNumber)
+  const selectedResult = publishedGrid?.drivers.find(driver => driver.number === driverNumber)
   const sessionControls = <div className="session-controls">
     <Select title="Season" value={selection.year} choices={years.map(year => ({ value: year, label: String(year) }))} onChange={year => setSelection({ year, meeting: 0, session: 0 })}/>
-    <Select title="Grand Prix" value={meeting?.meeting_key ?? ''} choices={meetingChoices.map(race => ({ value: race.meeting_key, label: race.country_name + ' · ' + race.circuit_short_name }))} onChange={meeting => setSelection(old => ({ ...old, meeting, session: 0 }))}/>
+    <Select title="Grand Prix" value={meeting?.meeting_key ?? ''} choices={meetingChoices.map(race => ({ value: race.meeting_key, label: race.country_name + ' · ' + race.circuit_short_name }))} onChange={meeting => {
+      const selectedRace = sessions.find(session => session.meeting_key === meeting && session.session_name === 'Race')
+      setSelection(old => ({ ...old, meeting, session: 0, raceDate: utcDate(selectedRace?.date_start) }))
+    }}/>
     <Select title="Session" value={session?.session_key ?? ''} choices={candidates.map(s => ({ value: s.session_key, label: s.session_name }))} onChange={session => setSelection(old => ({ ...old, session }))}/>
   </div>
   function openRace(event: Meeting) {
@@ -82,9 +109,12 @@ export default function App() {
     <main id="main-content" tabIndex={-1}>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={cockpit ? 'timing' : page + (page === 'drivers' ? route[1] ?? '' : '')} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? { opacity: 1 } : { opacity: 0 }} transition={{ duration: .15 }}>
-          {page === '' && <Home session={session} next={next} nextSession={nextSession} drivers={drivers} loading={roster.loading || sessionsData.loading} error={catalogError ?? roster.error} retry={catalogError ? sessionsData.retry : roster.retry}/>}
+          {page === '' && <Home session={session} next={next} nextSession={nextSession} {...grid}/>}
           {page === 'drivers' && <section className="shell interior">
-            {route[1] ? <DriverProfile driver={selectedDriver} session={session} loading={sessionsData.loading || roster.loading}/> : <Drivers drivers={drivers} year={selection.year} controls={sessionControls} loading={sessionsData.loading || roster.loading} error={catalogError ?? roster.error} retry={catalogError ? sessionsData.retry : roster.retry}/>}
+            {route[1] ? <DriverProfile driver={selectedDriver} session={session}
+              loading={grid.loading} error={grid.error} retry={grid.retry} retryOpenF1={retryOpenF1}
+              published={publishedGrid && selectedResult ? { grid: publishedGrid, result: selectedResult } : undefined}/>
+              : <Drivers year={selection.year} controls={sessionControls} {...grid}/>}
           </section>}
           {cockpit && <section className="shell interior cockpit-shell">
             <div className="section-title cockpit-title"><div><span className="mode-chip"><i/> Historical replay</span><h1>{page === 'race-control' ? 'Race control' : page === 'telemetry' ? 'Telemetry' : page === 'compare' ? 'Compare drivers' : 'Team radio'}</h1></div>
